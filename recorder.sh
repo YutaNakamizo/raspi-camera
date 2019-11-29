@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION="0.0.1"
+VERSION="0.1.0"
 
 echo "Recorder System $VERSION"
 
@@ -20,17 +20,37 @@ echo '$filename = '$filename
 
 
 # Set $dir
-echo 'Save at [default $HOME/video/]: '
+echo 'Save at [default /mnt/ssd-01/video/]: '
 read dir
 
 if [ -z $dir ]; then
-  dir="$HOME/video/"
+  dir="/mnt/ssd-01/video/"
 elif [ ${dir##*/} != '' ]; then
   dir=$dir'/'
 fi
 
 echo '$dir = '$dir
 
+
+
+# Set $mic
+echo 'Select Mic [default 0]'
+arecord -l
+read $mic
+
+if [ -z $mic ]; then
+  mic="0"
+fi
+
+
+# Set $camera
+echo 'Select Camera [default /dev/video0]'
+v4l2-ctl --list-devices
+read $camera
+
+if [ -z $camera ]; then
+  camera='/dev/video0'
+fi
 
 
 # Record
@@ -41,9 +61,9 @@ fi
 
 echo 'Starting... (Press "q" to stop.)'
 
-ffmpeg -f alsa -ac 1 -thread_queue_size 8192 -i hw:1,0 \
-  -f v4l2 -thread_queue_size 8192 -s 640x480 -i /dev/video0 \
-  -c:v h264_omx -b:v 768k \
+ffmpeg -f alsa -ac 1 -thread_queue_size 8192 -i hw:$mic,0 \
+  -f v4l2 -thread_queue_size 8192 -s 720x480 -i $camera \
+  -c:v h264_omx -b:v 5000k \
   -c:a aac \
   $dir$filename
 
